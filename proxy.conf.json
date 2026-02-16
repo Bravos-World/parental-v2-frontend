@@ -1,0 +1,12 @@
+{
+  "/api": {
+    "target": "https://api.bravos.io.vn",
+    "secure": true,
+    "changeOrigin": true
+  },
+  "/ws": {
+    "target": "wss://api.bravos.io.vn",
+    "secure": true,
+    "ws": true
+  }
+}
