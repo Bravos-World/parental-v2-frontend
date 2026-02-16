@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, tap, catchError, of, map } from 'rxjs';
 import { ApiResponse } from '../models/api-response.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -26,7 +27,7 @@ export class AuthService {
 
   private checkSession() {
     this.http
-      .get<ApiResponse<any>>('/api/devices', { withCredentials: true })
+      .get<ApiResponse<any>>(`${environment.apiUrl}/api/devices`, { withCredentials: true })
       .pipe(
         map(() => true),
         catchError(() => {
@@ -55,7 +56,7 @@ export class AuthService {
   login(username: string, password: string) {
     return this.http
       .post<ApiResponse<void>>(
-        '/api/auth/login',
+        `${environment.apiUrl}/api/auth/login`,
         { username, password },
         { withCredentials: true },
       )
@@ -69,7 +70,7 @@ export class AuthService {
 
   logout() {
     return this.http
-      .post<ApiResponse<void>>('/api/auth/logout', {}, { withCredentials: true })
+      .post<ApiResponse<void>>(`${environment.apiUrl}/api/auth/logout`, {}, { withCredentials: true })
       .pipe(
         tap(() => {
           this.isLoggedIn$.next(false);
@@ -81,7 +82,7 @@ export class AuthService {
 
   changePassword(oldPassword: string, newPassword: string) {
     return this.http.post<ApiResponse<void>>(
-      '/api/auth/change-password',
+      `${environment.apiUrl}/api/auth/change-password`,
       { oldPassword, newPassword },
       { withCredentials: true },
     );
@@ -89,7 +90,7 @@ export class AuthService {
 
   register(username: string, password: string) {
     return this.http.post<ApiResponse<void>>(
-      '/api/auth/register',
+      `${environment.apiUrl}/api/auth/register`,
       { username, password },
       { withCredentials: true },
     );
