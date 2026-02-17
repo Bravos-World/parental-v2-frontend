@@ -124,18 +124,15 @@ import { I18nService } from '../../core/services/i18n.service';
         } @else {
           <div class="device-grid">
             @for (device of devices(); track device.deviceId) {
-              <div
-                class="device-card glass-card-sm"
-                (click)="navigateToDevice(device.deviceId)"
-              >
-                <div class="device-card-header">
+              <div class="device-card glass-card-sm">
+                <div class="device-card-header" (click)="navigateToDevice(device.deviceId)">
                   <span class="device-name">{{ device.deviceName }}</span>
                   <app-status-badge
                     [variant]="device.status === 'ONLINE' ? 'online' : 'offline'"
                     [label]="device.status"
                   />
                 </div>
-                <div class="device-card-body">
+                <div class="device-card-body" (click)="navigateToDevice(device.deviceId)">
                   <div class="device-info-row">
                     <span class="device-info-label">{{ i18n.t('dashboard.ip') }}</span>
                     <span class="device-info-value">{{ device.ipAddress }}</span>
@@ -152,7 +149,37 @@ import { I18nService } from '../../core/services/i18n.service';
                     <span class="device-info-value muted">{{ formatTime(device.lastSeen) }}</span>
                   </div>
                 </div>
-                <div class="device-card-footer">
+                
+                <!-- Quick Actions -->
+                <div class="device-quick-actions">
+                  @if (device.status === 'ONLINE') {
+                    <button 
+                      class="quick-action-btn lock-btn" 
+                      (click)="lockDeviceNow(device.deviceId, $event)"
+                      title="{{ i18n.t('dashboard.lock_now') }}"
+                    >
+                      🔒 {{ i18n.t('dashboard.lock_now') }}
+                    </button>
+                    <button 
+                      class="quick-action-btn unlock-btn" 
+                      (click)="openUnlockModal(device.deviceId, $event)"
+                      title="{{ i18n.t('dashboard.unlock_temp') }}"
+                    >
+                      🔓 {{ i18n.t('dashboard.unlock_temp') }}
+                    </button>
+                  }
+                  @if (device.status === 'OFFLINE') {
+                    <button 
+                      class="quick-action-btn delete-btn" 
+                      (click)="deleteDevice(device.deviceId, $event)"
+                      title="{{ i18n.t('dashboard.delete_device') }}"
+                    >
+                      🗑️ {{ i18n.t('dashboard.delete_device') }}
+                    </button>
+                  }
+                </div>
+
+                <div class="device-card-footer" (click)="navigateToDevice(device.deviceId)">
                   <span class="arrow-hint">{{ i18n.t('dashboard.view_details') }}</span>
                 </div>
               </div>
@@ -160,6 +187,57 @@ import { I18nService } from '../../core/services/i18n.service';
           </div>
         }
       </div>
+
+      <!-- Unlock Duration Modal -->
+      @if (showUnlockModal()) {
+        <div class="modal-overlay" (click)="closeUnlockModal()">
+          <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h3>{{ i18n.t('dashboard.unlock_temp') }}</h3>
+              <button class="modal-close" (click)="closeUnlockModal()">✕</button>
+            </div>
+            <div class="modal-body">
+              <label class="modal-label">{{ i18n.t('dashboard.unlock_for') }}</label>
+              <div class="unlock-presets">
+                @for (preset of unlockPresets; track preset.key) {
+                  <button
+                    class="preset-btn"
+                    [class.preset-active]="selectedUnlockPreset === preset.key"
+                    (click)="selectUnlockPreset(preset)"
+                  >
+                    {{ i18n.t(preset.key) }}
+                  </button>
+                }
+              </div>
+              @if (selectedUnlockPreset === 'delay.custom') {
+                <div class="custom-delay">
+                  <input
+                    type="number"
+                    class="input-field custom-delay-input"
+                    [(ngModel)]="customUnlockValue"
+                    (ngModelChange)="updateCustomUnlock()"
+                    min="1"
+                    [placeholder]="i18n.t('delay.enter_value')"
+                  />
+                  <select
+                    class="input-field time-unit-select"
+                    [(ngModel)]="unlockTimeUnit"
+                    (ngModelChange)="updateCustomUnlock()"
+                  >
+                    <option value="minutes">{{ i18n.t('delay.minutes') }}</option>
+                    <option value="hours">{{ i18n.t('delay.hours') }}</option>
+                  </select>
+                </div>
+              }
+              <p class="delay-hint">⏱️ {{ formatDelay(unlockDuration) }}</p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost btn-sm" (click)="closeUnlockModal()">Hủy</button>
+              <button class="btn btn-success btn-sm" (click)="confirmUnlock()">Xác nhận</button>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: `
@@ -271,7 +349,7 @@ import { I18nService } from '../../core/services/i18n.service';
       margin-bottom: 8px;
     }
 
-    .delay-presets {
+    .delay-presets, .unlock-presets {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
@@ -331,8 +409,9 @@ import { I18nService } from '../../core/services/i18n.service';
 
     .device-card {
       padding: 20px;
-      cursor: pointer;
       transition: all var(--transition-fast);
+      display: flex;
+      flex-direction: column;
     }
 
     .device-card:hover {
@@ -346,6 +425,7 @@ import { I18nService } from '../../core/services/i18n.service';
       align-items: center;
       justify-content: space-between;
       margin-bottom: 16px;
+      cursor: pointer;
     }
 
     .device-name {
@@ -358,6 +438,7 @@ import { I18nService } from '../../core/services/i18n.service';
       display: flex;
       flex-direction: column;
       gap: 10px;
+      cursor: pointer;
     }
 
     .device-info-row {
@@ -383,16 +464,149 @@ import { I18nService } from '../../core/services/i18n.service';
       color: var(--text-muted);
     }
 
-    .device-card-footer {
-      margin-top: 16px;
+    /* Quick Actions */
+    .device-quick-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
       padding-top: 12px;
       border-top: 1px solid var(--border-color);
+    }
+
+    .quick-action-btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .quick-action-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .lock-btn:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .unlock-btn:hover {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    .delete-btn:hover {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .device-card-footer {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+      cursor: pointer;
     }
 
     .arrow-hint {
       font-size: 0.8rem;
       color: var(--accent-blue);
       font-weight: 500;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .modal-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+      width: 90%;
+      max-width: 500px;
+      animation: slideUp 0.3s ease-out;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .modal-header h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin: 0;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+    }
+
+    .modal-close:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .modal-footer {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding: 20px;
+      border-top: 1px solid var(--border-color);
     }
 
     /* Loading / Empty */
@@ -440,6 +654,22 @@ import { I18nService } from '../../core/services/i18n.service';
       to { transform: rotate(360deg); }
     }
 
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     @media (max-width: 768px) {
       .stats-row {
         grid-template-columns: repeat(2, 1fr);
@@ -448,11 +678,20 @@ import { I18nService } from '../../core/services/i18n.service';
       .device-grid {
         grid-template-columns: 1fr;
       }
+
+      .modal-content {
+        width: 95%;
+      }
     }
 
     @media (max-width: 480px) {
       .stats-row {
         grid-template-columns: 1fr;
+      }
+
+      .quick-action-btn {
+        font-size: 0.7rem;
+        padding: 6px 8px;
       }
     }
   `,
@@ -468,6 +707,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   loading = signal(true);
   onlineCount = signal(0);
   lockedCount = signal(0);
+
+  // Modal state
+  showUnlockModal = signal(false);
+  selectedDeviceId = '';
 
   ngOnInit() {
     this.loadDevices();
@@ -512,6 +755,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   customDelayValue = 10;
   timeUnit: 'minutes' | 'hours' = 'minutes';
 
+  // Unlock modal presets
+  unlockPresets = [
+    { key: 'delay.5min', seconds: 300 },
+    { key: 'delay.15min', seconds: 900 },
+    { key: 'delay.30min', seconds: 1800 },
+    { key: 'delay.1hour', seconds: 3600 },
+    { key: 'delay.2hours', seconds: 7200 },
+    { key: 'delay.custom', seconds: -1 },
+  ];
+  selectedUnlockPreset = 'delay.1hour';
+  unlockDuration = 3600;
+  customUnlockValue = 1;
+  unlockTimeUnit: 'minutes' | 'hours' = 'hours';
+
   selectPreset(preset: { key: string; seconds: number }) {
     this.selectedPreset = preset.key;
     if (preset.seconds >= 0) {
@@ -524,6 +781,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
   updateCustomDelay() {
     const multiplier = this.timeUnit === 'hours' ? 3600 : 60;
     this.broadcastDelay = this.customDelayValue * multiplier;
+  }
+
+  selectUnlockPreset(preset: { key: string; seconds: number }) {
+    this.selectedUnlockPreset = preset.key;
+    if (preset.seconds >= 0) {
+      this.unlockDuration = preset.seconds;
+    } else {
+      this.updateCustomUnlock();
+    }
+  }
+
+  updateCustomUnlock() {
+    const multiplier = this.unlockTimeUnit === 'hours' ? 3600 : 60;
+    this.unlockDuration = this.customUnlockValue * multiplier;
   }
 
   formatDelay(seconds: number): string {
@@ -545,6 +816,62 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.deviceService.sendCommandToAll(command).subscribe({
       next: () => this.toastService.success(this.i18n.t('broadcast.command_sent', { type })),
       error: (err) => this.toastService.error(err.error?.message || this.i18n.t('broadcast.command_failed')),
+    });
+  }
+
+  // Quick action methods
+  lockDeviceNow(deviceId: string, event: Event) {
+    event.stopPropagation();
+    const command: CommandRequest = { commandType: 'LOCK', delaySeconds: 0 };
+    this.deviceService.sendCommand(deviceId, command).subscribe({
+      next: () => {
+        this.toastService.success(this.i18n.t('dashboard.lock_now_success'));
+        this.loadDevices();
+      },
+      error: (err) => this.toastService.error(err.error?.message || this.i18n.t('dashboard.action_failed')),
+    });
+  }
+
+  openUnlockModal(deviceId: string, event: Event) {
+    event.stopPropagation();
+    this.selectedDeviceId = deviceId;
+    this.showUnlockModal.set(true);
+  }
+
+  closeUnlockModal() {
+    this.showUnlockModal.set(false);
+    this.selectedDeviceId = '';
+  }
+
+  confirmUnlock() {
+    if (!this.selectedDeviceId) return;
+    
+    this.deviceService.unlockNow(this.selectedDeviceId, this.unlockDuration).subscribe({
+      next: () => {
+        const timeStr = this.formatDelay(this.unlockDuration);
+        this.toastService.success(this.i18n.t('dashboard.unlock_now_success', { time: timeStr }));
+        this.closeUnlockModal();
+        this.loadDevices();
+      },
+      error: (err) => {
+        this.toastService.error(err.error?.message || this.i18n.t('dashboard.action_failed'));
+        this.closeUnlockModal();
+      },
+    });
+  }
+
+  deleteDevice(deviceId: string, event: Event) {
+    event.stopPropagation();
+    if (!confirm(this.i18n.t('dashboard.delete_confirm'))) {
+      return;
+    }
+
+    this.deviceService.deleteDevice(deviceId).subscribe({
+      next: () => {
+        this.toastService.success(this.i18n.t('dashboard.delete_success'));
+        this.loadDevices();
+      },
+      error: (err) => this.toastService.error(err.error?.message || this.i18n.t('dashboard.action_failed')),
     });
   }
 
