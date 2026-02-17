@@ -64,6 +64,15 @@ const VI: Translations = {
   'dashboard.ip': 'ĐỊA CHỈ IP',
   'dashboard.lock_status': 'TRẠNG THÁI KHÓA',
   'dashboard.last_seen': 'LẦN CUỐI NHÌN THẤY',
+  'dashboard.lock_now': 'Khóa Ngay',
+  'dashboard.unlock_temp': 'Mở Tạm',
+  'dashboard.delete_device': 'Xóa Thiết Bị',
+  'dashboard.unlock_for': 'Mở khóa trong',
+  'dashboard.lock_now_success': 'Đã gửi lệnh khóa thiết bị',
+  'dashboard.unlock_now_success': 'Đã mở khóa thiết bị trong {time}',
+  'dashboard.delete_success': 'Đã xóa thiết bị thành công',
+  'dashboard.delete_confirm': 'Bạn có chắc chắn muốn xóa thiết bị này?',
+  'dashboard.action_failed': 'Thao tác thất bại',
 
   // ── Device Detail ──
   'device.back': '← Quay lại Bảng Điều Khiển',
@@ -212,6 +221,15 @@ const EN: Translations = {
   'dashboard.ip': 'IP',
   'dashboard.lock_status': 'Lock',
   'dashboard.last_seen': 'Last Seen',
+  'dashboard.lock_now': 'Lock Now',
+  'dashboard.unlock_temp': 'Unlock Temp',
+  'dashboard.delete_device': 'Delete Device',
+  'dashboard.unlock_for': 'Unlock for',
+  'dashboard.lock_now_success': 'Lock command sent to device',
+  'dashboard.unlock_now_success': 'Device unlocked for {time}',
+  'dashboard.delete_success': 'Device deleted successfully',
+  'dashboard.delete_confirm': 'Are you sure you want to delete this device?',
+  'dashboard.action_failed': 'Action failed',
 
   // ── Device Detail ──
   'device.back': '← Back to Dashboard',

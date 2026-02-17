@@ -62,4 +62,19 @@ export class DeviceService {
       { withCredentials: true, params },
     );
   }
+
+  unlockNow(deviceId: string, lockAfterSeconds: number) {
+    return this.http.post<ApiResponse<void>>(
+      `${environment.apiUrl}/api/devices/${deviceId}/unlock-now/${lockAfterSeconds}`,
+      {},
+      { withCredentials: true }
+    );
+  }
+
+  deleteDevice(deviceId: string) {
+    return this.http.delete<ApiResponse<void>>(
+      `${environment.apiUrl}/api/devices/${deviceId}`,
+      { withCredentials: true }
+    );
+  }
 }
