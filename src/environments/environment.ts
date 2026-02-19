@@ -1,4 +1,4 @@
 export const environment = {
-  production: true,
-  apiUrl: 'https://api.bravos.io.vn',
+  production: false,
+  apiUrl: 'http://localhost:8080',
 };

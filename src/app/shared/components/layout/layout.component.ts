@@ -3,6 +3,7 @@ import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { I18nService } from '../../../core/services/i18n.service';
 import { ToastComponent } from '../toast/toast.component';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-layout',
@@ -29,9 +30,20 @@ import { ToastComponent } from '../toast/toast.component';
             <span class="nav-icon">📊</span>
             @if (!collapsed()) { <span class="nav-label">{{ i18n.t('nav.dashboard') }}</span> }
           </a>
+          <a routerLink="/ws-secret" routerLinkActive="nav-active" class="nav-item">
+            <span class="nav-icon">🔑</span>
+            @if (!collapsed()) { <span class="nav-label">{{ i18n.t('nav.ws_secret') }}</span> }
+          </a>
           <a routerLink="/settings" routerLinkActive="nav-active" class="nav-item">
             <span class="nav-icon">⚙️</span>
             @if (!collapsed()) { <span class="nav-label">{{ i18n.t('nav.settings') }}</span> }
+          </a>
+          <a [attr.href]="apiDocsUrl" target="_blank" rel="noopener" class="nav-item api-docs-link">
+            <span class="nav-icon">📚</span>
+            @if (!collapsed()) {
+              <span class="nav-label">{{ i18n.t('nav.api_docs') }}</span>
+              <span class="ext-badge">↗</span>
+            }
           </a>
         </nav>
 
@@ -58,16 +70,24 @@ import { ToastComponent } from '../toast/toast.component';
       <!-- Main content  -->
       <main class="main-content" [class.main-expanded]="collapsed()">
         <header class="topbar">
-          <button class="mobile-toggle" (click)="mobileOpen.set(!mobileOpen())">☰</button>
+          <button class="mobile-toggle" (click)="mobileOpen.set(!mobileOpen())" aria-label="Open menu">☰</button>
+          <div class="topbar-brand">
+            <span class="topbar-logo">🛡️</span>
+            <span class="topbar-title">Parental<span class="brand-accent">Ctrl</span></span>
+          </div>
           <div class="topbar-spacer"></div>
           <div class="topbar-actions">
+            <a [attr.href]="apiDocsUrl" target="_blank" rel="noopener" class="api-docs-btn" [title]="i18n.t('nav.api_docs')">
+              <span>📚</span>
+              <span class="api-docs-label">{{ i18n.t('nav.api_docs') }}</span>
+            </a>
             <button class="lang-switch" (click)="i18n.toggle()" [title]="i18n.isVi ? 'Switch to English' : 'Chuyển sang Tiếng Việt'">
               <span class="lang-flag">{{ i18n.isVi ? '🇻🇳' : '🇬🇧' }}</span>
               <span class="lang-label">{{ i18n.isVi ? 'VI' : 'EN' }}</span>
             </button>
             <span class="user-badge">
               <span class="user-avatar">👤</span>
-              {{ i18n.t('nav.admin') }}
+              <span class="user-name">{{ i18n.t('nav.admin') }}</span>
             </span>
           </div>
         </header>
@@ -256,6 +276,28 @@ import { ToastComponent } from '../toast/toast.component';
       position: sticky;
       top: 0;
       z-index: 50;
+      gap: 8px;
+    }
+
+    .topbar-brand {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .topbar-logo {
+      font-size: 1.3rem;
+    }
+
+    .topbar-title {
+      white-space: nowrap;
+    }
+
+    .brand-accent {
+      color: var(--accent-blue);
     }
 
     .topbar-spacer {
@@ -265,7 +307,33 @@ import { ToastComponent } from '../toast/toast.component';
     .topbar-actions {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 8px;
+    }
+
+    .api-docs-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      background: rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      font-size: 0.8rem;
+      color: var(--accent-purple);
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .api-docs-btn:hover {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: var(--accent-purple);
+    }
+
+    .api-docs-label {
+      font-weight: 600;
+      letter-spacing: 0.02em;
     }
 
     .lang-switch {
@@ -302,7 +370,7 @@ import { ToastComponent } from '../toast/toast.component';
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 16px;
+      padding: 6px 14px;
       background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%);
       border: 1px solid rgba(59, 130, 246, 0.2);
       border-radius: 50px;
@@ -334,6 +402,21 @@ import { ToastComponent } from '../toast/toast.component';
       flex: 1;
     }
 
+    .api-docs-link {
+      color: var(--accent-purple);
+    }
+
+    .api-docs-link:hover {
+      background: rgba(139, 92, 246, 0.1) !important;
+      color: var(--accent-purple) !important;
+    }
+
+    .ext-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      opacity: 0.6;
+    }
+
     /* ── Responsive ── */
     @media (max-width: 768px) {
       .toggle-btn {
@@ -342,7 +425,7 @@ import { ToastComponent } from '../toast/toast.component';
 
       .sidebar {
         transform: translateX(-100%);
-        width: 260px !important;
+        width: 280px !important;
       }
 
       .sidebar-mobile-open {
@@ -372,13 +455,36 @@ import { ToastComponent } from '../toast/toast.component';
 
       .page-content {
         padding: 16px;
+        padding-bottom: env(safe-area-inset-bottom, 16px);
       }
 
       .topbar {
-        padding: 12px 16px;
+        padding: 10px 14px;
+      }
+
+      .topbar-brand {
+        display: flex;
+      }
+
+      .api-docs-label {
+        display: none;
       }
 
       .lang-label {
+        display: none;
+      }
+
+      .user-name {
+        display: none;
+      }
+
+      .user-badge {
+        padding: 6px 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .api-docs-btn {
         display: none;
       }
     }
@@ -389,6 +495,8 @@ export class LayoutComponent {
   i18n = inject(I18nService);
   collapsed = signal(false);
   mobileOpen = signal(false);
+
+  readonly apiDocsUrl = `${environment.apiUrl}/swagger-ui/index.html`;
 
   onLogout() {
     this.authService.logout().subscribe();
