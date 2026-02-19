@@ -27,6 +27,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'ws-secret',
+        loadComponent: () =>
+          import('./features/ws-secret/ws-secret.component').then((m) => m.WsSecretComponent),
+      },
+      {
         path: 'settings',
         loadComponent: () =>
           import('./features/settings/settings.component').then((m) => m.SettingsComponent),
